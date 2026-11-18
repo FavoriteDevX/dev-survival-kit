@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  survival-portal:
+    image: python:3.11-slim
+    container_name: survival-portal
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt &&
+             python3 scripts/generate_manuals.py &&
+             python3 portal/app.py"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  local-git:
+    image: gitea/gitea:latest
+    container_name: survival-gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__server__OFFLINE_MODE=true
+    volumes:
+      - ./data/gitea:/data
+    ports:
+      - "3000:3000"
+      - "2222:22"
+    restart: unless-stopped
+
+  file-vault:
+    image: halverneus/static-file-server:latest
+    container_name: survival-vault
+    environment:
+      - FOLDER=/web
+      - SHOW_LISTING=true
+    volumes:
+      - ./vault:/web
+    ports:
+      - "8082:8080"
+    restart: unless-stopped
